@@ -8,10 +8,7 @@
     <!-- update the version number as needed -->
     <script defer src="/__/firebase/5.10.1/firebase-app.js"></script>
     <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/5.10.1/firebase-auth.js"></script>
-    <script defer src="/__/firebase/5.10.1/firebase-database.js"></script>
-    <script defer src="/__/firebase/5.10.1/firebase-messaging.js"></script>
-    <script defer src="/__/firebase/5.10.1/firebase-storage.js"></script>
+    <script defer src="/__/firebase/5.10.1/firebase-firestore.js"></script>
     <!-- initialize the SDK after all desired features are loaded -->
     <script defer src="/__/firebase/init.js"></script>
     <script src="https://unpkg.com/vue/dist/vue.js"></script>
@@ -32,15 +29,25 @@
   </head>
   <body>
     <div id="app">
-      <h1>{{mm}}:{{ss}}</h1>
-      <button type="button" @click="start()" :disabled="started_at != 0 || offset == 0">start</button>
-      <button type="button" @click="stop()" :disabled="started_at == 0">stop</button>
-      <button type="button" @click="reset()">reset</button>
+      <div v-if="session">
+        <h1>{{mm}}:{{ss}}</h1>
+        <button type="button" @click="start()" :disabled="started_at != 0 || offset == 0">start</button>
+        <button type="button" @click="stop()" :disabled="started_at == 0">stop</button>
+        <button type="button" @click="reset()">reset</button>    
+      </div>
+      <div v-if="!session">
+        <button type="button" @click="newSession()">new session</button>
+      </div>
+      <div>{{started_at}}</div>
+      <div>{{offset}}</div>
+      <div>{{sec_past}}</div>
+                
     </div>
     <p id="load">Firebase SDK Loading&hellip;</p>
 
     <script>
       document.addEventListener('DOMContentLoaded', function() {
+        let db
         // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
         // // The Firebase SDK is initialized and available here!
         //
@@ -53,50 +60,89 @@
 
         try {
           let app = firebase.app();
+          db = app.firestore()
           let features = ['auth', 'database', 'messaging', 'storage'].filter(feature => typeof app[feature] === 'function');
           document.getElementById('load').innerHTML = `Firebase SDK loaded with ${features.join(', ')}`;
         } catch (e) {
           console.error(e);
           document.getElementById('load').innerHTML = 'Error loading the Firebase SDK, check the console.';
         }
-        new Vue({
+
+        const vm = new Vue({
           el: '#app',
           data: {
             started_at: 0,
             sec_past: 0,
-            offset: 0
+            offset: 0,
+            session: ''
           },
           methods: {
+            newSession() {
+              db.collection('sessions').add({
+                started_at: 0,
+                offset: 0
+              })
+              .then((docRef) => {
+                location.hash = docRef.id
+              })
+              .catch((error) => {
+                throw error
+              })
+            },
             reset() {
-              this.offset = 10
+              db.collection('sessions').doc(this.session).set({
+                started_at: 0,
+                offset: 10
+              })
               this.sec_past = 0
             },
             start() {
-              this.started_at = Date.now()
-              this.intervalId = setInterval(() => {
-                const s = (Date.now() - this.started_at) / 1000
-                if (this.offset > s) {
-                  this.sec_past = s
-                } else {
-                  this.sec_past = this.offset
-                  this.stop()
-                }
-              }, 100)
+              db.collection('sessions').doc(this.session).set({
+                started_at: Date.now()
+              }, { merge: true })
             },
             stop() {
-              this.started_at = 0
-              this.offset = this.offset - this.sec_past
+              db.collection('sessions').doc(this.session).set({
+                started_at: 0,
+                offset: this.offset - this.sec_past
+              })
               this.sec_past = 0
-              clearInterval(this.intervalId)
             }
           },
           computed: {
-            mm() {
-              return ((this.offset - this.sec_past) / 60) | 0
-            },
-            ss() {
-              return ((this.offset - this.sec_past) % 60) | 0
+            mm() { return ((this.offset - this.sec_past) / 60) | 0 },
+            ss() { return ((this.offset - this.sec_past) % 60) | 0 }
+          },
+          created() {
+            setInterval(() => {
+              if (this.started_at == 0) {
+                return
+              }
+              const s = (Date.now() - this.started_at) / 1000
+              if (this.offset > s) {
+                this.sec_past = s
+              } else {
+                this.sec_past = this.offset
+                this.stop()
+              }
+            }, 100)
+
+            onHashChange = (ev) => {
+              console.log(ev)
+              let val = location.hash
+              if (!val) {
+                return
+              }
+              // remove '#'
+              val = val.slice(1)
+              db.collection('sessions').doc(val).onSnapshot((snapShot) => {
+                this.started_at = snapShot.data().started_at
+                this.offset = snapShot.data().offset
+                this.session = val
+              })
             }
+            window.onhashchange = onHashChange
+            onHashChange()
           }
         })
       });
