@@ -79,8 +79,9 @@
           methods: {
             newSession() {
               db.collection('sessions').add({
+                created_at: Date.now(),
                 started_at: 0,
-                offset: 0
+                offset: 10
               })
               .then((docRef) => {
                 location.hash = docRef.id
@@ -128,7 +129,6 @@
             }, 100)
 
             onHashChange = (ev) => {
-              console.log(ev)
               let val = location.hash
               if (!val) {
                 return
@@ -136,9 +136,11 @@
               // remove '#'
               val = val.slice(1)
               db.collection('sessions').doc(val).onSnapshot((snapShot) => {
-                this.started_at = snapShot.data().started_at
-                this.offset = snapShot.data().offset
-                this.session = val
+                if (snapShot.exists) {
+                  this.started_at = snapShot.data().started_at
+                  this.offset = snapShot.data().offset
+                  this.session = val
+                }
               })
             }
             window.onhashchange = onHashChange
