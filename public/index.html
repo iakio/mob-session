@@ -34,8 +34,8 @@
           <div class="px-2 py-2 relative w-1/4">
             {{mob}}
             <div class="absolute pin-t pin-r">
-              <button class="px-2 py-2 border border-gray" @click="upMob(index)">↑</button>
-              <button class="px-2 py-2 border border-gray" @click="downMob(index)">↓</button>
+              <button class="px-2 py-2 border border-gray" @click="swapMob(index, index - 1)">↑</button>
+              <button class="px-2 py-2 border border-gray" @click="swapMob(index, index + 1)">↓</button>
               <button class="px-2 py-2 border border-gray" @click="removeMob(mob)">x</button>    
             </div>
           </div>
@@ -49,7 +49,6 @@
     </div>
     <script>
       document.addEventListener('DOMContentLoaded', function() {
-        let db
         new Vue({
           el: '#app',
           data: {
@@ -62,7 +61,7 @@
           },
           methods: {
             newSession() {
-              db.collection('sessions').add({
+              this.collectionRef.add({
                 created_at: Date.now(),
                 started_at: 0,
                 offset: 10
@@ -75,57 +74,45 @@
               })
             },
             reset() {
-              db.collection('sessions').doc(this.session).set({
+              this.sessionRef.set({
                 started_at: 0,
                 offset: 10
               }, { merge: true })
               this.sec_past = 0
             },
             start() {
-              db.collection('sessions').doc(this.session).set({
+              this.sessionRef.set({
                 started_at: Date.now()
               }, { merge: true })
             },
             stop() {
-              db.collection('sessions').doc(this.session).set({
+              this.sessionRef.set({
                 started_at: 0,
                 offset: this.offset - this.sec_past
               }, { merge: true })
               this.sec_past = 0
             },
             addMob() {
-              db.collection('sessions').doc(this.session).set({
+              this.sessionRef.set({
                 mobs: [...this.mobs, this.mobName]
               }, { merge: true })
               this.mobName = ''
             },
-            upMob(index) {
-              let ia = index,
-                  ib = index == 0 ? this.mobs.length - 1 : index - 1,
-                  a = this.mobs[ia],
+            swapMob(ia, ib) {
+              ib = ib == 0 ? this.mobs.length - 1 : ib
+              ib = ib == this.mobs.length ? 0 : ib
+              let a = this.mobs[ia],
                   b = this.mobs[ib]
 
               this.mobs[ia] = b
               this.mobs[ib] = a              
-              db.collection('sessions').doc(this.session).set({
+              this.sessionRef.set({
                 mobs: this.mobs
               }, { merge: true })
 
-            },
-            downMob(index) {
-              let ia = index,
-                  ib = index == this.mobs.length - 1 ? 0 : index + 1,
-                  a = this.mobs[ia],
-                  b = this.mobs[ib]
-
-              this.mobs[ia] = b
-              this.mobs[ib] = a              
-              db.collection('sessions').doc(this.session).set({
-                mobs: this.mobs
-              }, { merge: true })
             },
             removeMob(mob) {
-              db.collection('sessions').doc(this.session).set({
+              this.sessionRef.set({
                 mobs: this.mobs.filter(el => el != mob)
               }, { merge: true })
             }
@@ -141,8 +128,9 @@
             }
           },
           created: function () {
-            let app = firebase.app();
-            db = app.firestore()
+            let app = firebase.app()
+            let db = app.firestore()
+            this.collectionRef = db.collection('sessions')
             setInterval(() => {
               if (this.started_at == 0) {
                 return
@@ -164,7 +152,8 @@
               }
               // remove '#'
               val = val.slice(1)
-              db.collection('sessions').doc(val).onSnapshot((snapShot) => {
+              this.sessionRef = this.collectionRef.doc(val)
+              this.sessionRef.onSnapshot((snapShot) => {
                 if (snapShot.exists) {
                   this.started_at = snapShot.data().started_at
                   this.offset = snapShot.data().offset
