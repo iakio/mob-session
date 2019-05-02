@@ -4,14 +4,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Welcome to Firebase Hosting</title>
-
     <!-- update the version number as needed -->
     <script defer src="/__/firebase/5.10.1/firebase-app.js"></script>
     <!-- include only the Firebase features as you need -->
     <script defer src="/__/firebase/5.10.1/firebase-firestore.js"></script>
     <!-- initialize the SDK after all desired features are loaded -->
     <script defer src="/__/firebase/init.js"></script>
-    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <script defer src="https://unpkg.com/vue/dist/vue.js"></script>
     <style media="screen">
       body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
       #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
@@ -48,27 +47,7 @@
     <script>
       document.addEventListener('DOMContentLoaded', function() {
         let db
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-
-        try {
-          let app = firebase.app();
-          db = app.firestore()
-          let features = ['auth', 'database', 'messaging', 'storage'].filter(feature => typeof app[feature] === 'function');
-          document.getElementById('load').innerHTML = `Firebase SDK loaded with ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          document.getElementById('load').innerHTML = 'Error loading the Firebase SDK, check the console.';
-        }
-
-        const vm = new Vue({
+        new Vue({
           el: '#app',
           data: {
             started_at: 0,
@@ -114,7 +93,9 @@
             mm() { return ((this.offset - this.sec_past) / 60) | 0 },
             ss() { return ((this.offset - this.sec_past) % 60) | 0 }
           },
-          created() {
+          created: function () {
+            let app = firebase.app();
+            db = app.firestore()
             setInterval(() => {
               if (this.started_at == 0) {
                 return
@@ -147,7 +128,7 @@
             onHashChange()
           }
         })
-      });
+      })
     </script>
   </body>
 </html>
