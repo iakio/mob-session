@@ -29,7 +29,23 @@
             <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="newSession()">create new session</button>
         </div>
       </div>
-      <pre>{{ $data | json }}</pre>
+      <div>
+        <div v-for="(mob, index) in mobs" class="mb-2">
+          <div class="px-2 py-2 relative w-1/4">
+            {{mob}}
+            <div class="absolute pin-t pin-r">
+              <button class="px-2 py-2 border border-gray" @click="upMob(index)">↑</button>
+              <button class="px-2 py-2 border border-gray" @click="downMob(index)">↓</button>
+              <button class="px-2 py-2 border border-gray" @click="removeMob(mob)">x</button>    
+            </div>
+          </div>
+        </div>
+        <div>
+          <input type="text" class="px-2 py-2 rounded border border-gray" v-model.trim="mobName" />
+          <button class="font-bold px-4 py-2 rounded border border-gray" type="button" @click="addMob()">add mob</button>    
+        </div>
+      </div>
+      <pre>{{ $data }}</pre>
     </div>
     <script>
       document.addEventListener('DOMContentLoaded', function() {
@@ -40,6 +56,8 @@
             started_at: 0,
             sec_past: 0,
             offset: 0,
+            mobs: [],
+            mobName: '',
             session: ''
           },
           methods: {
@@ -60,7 +78,7 @@
               db.collection('sessions').doc(this.session).set({
                 started_at: 0,
                 offset: 10
-              })
+              }, { merge: true })
               this.sec_past = 0
             },
             start() {
@@ -72,8 +90,44 @@
               db.collection('sessions').doc(this.session).set({
                 started_at: 0,
                 offset: this.offset - this.sec_past
-              })
+              }, { merge: true })
               this.sec_past = 0
+            },
+            addMob() {
+              db.collection('sessions').doc(this.session).set({
+                mobs: [...this.mobs, this.mobName]
+              }, { merge: true })
+              this.mobName = ''
+            },
+            upMob(index) {
+              let ia = index,
+                  ib = index == 0 ? this.mobs.length - 1 : index - 1,
+                  a = this.mobs[ia],
+                  b = this.mobs[ib]
+
+              this.mobs[ia] = b
+              this.mobs[ib] = a              
+              db.collection('sessions').doc(this.session).set({
+                mobs: this.mobs
+              }, { merge: true })
+
+            },
+            downMob(index) {
+              let ia = index,
+                  ib = index == this.mobs.length - 1 ? 0 : index + 1,
+                  a = this.mobs[ia],
+                  b = this.mobs[ib]
+
+              this.mobs[ia] = b
+              this.mobs[ib] = a              
+              db.collection('sessions').doc(this.session).set({
+                mobs: this.mobs
+              }, { merge: true })
+            },
+            removeMob(mob) {
+              db.collection('sessions').doc(this.session).set({
+                mobs: this.mobs.filter(el => el != mob)
+              }, { merge: true })
             }
           },
           computed: {
@@ -114,6 +168,7 @@
                 if (snapShot.exists) {
                   this.started_at = snapShot.data().started_at
                   this.offset = snapShot.data().offset
+                  this.mobs = snapShot.data().mobs || []
                   this.session = val
                 }
               })
