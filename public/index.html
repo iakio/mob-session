@@ -24,11 +24,12 @@
         <div class="text-center my-4" style="font-size: 10rem">{{mmss}}</div>
       </div>
       <div v-if="!session">
-        <button type="button" @click="newSession()">new session</button>
+        <div class="text-center my-4">
+            <p>No session found.</p>
+            <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="newSession()">create new session</button>
+        </div>
       </div>
-      <div>{{started_at}}</div>
-      <div>{{offset}}</div>
-      <div>{{sec_past}}</div>
+      <pre>{{ $data | json }}</pre>
     </div>
     <script>
       document.addEventListener('DOMContentLoaded', function() {
@@ -98,6 +99,7 @@
               } else {
                 this.sec_past = this.offset
                 this.stop()
+                new Notification('finish')
               }
             }, 100)
 
@@ -118,6 +120,10 @@
             }
             window.onhashchange = onHashChange
             onHashChange()
+
+            if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+              Notification.requestPermission()
+            }
           }
         })
       })
