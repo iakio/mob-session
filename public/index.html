@@ -22,6 +22,7 @@
             <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="stop()" :disabled="started_at == 0">stop</button>
             <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="reset()">reset</button>    
           </div>
+          <div class="flex justify-center my-4" v-if="driver">{{driver}}'s turn!</div>
           <div class="flex justify-center my-4" style="font-size: 10rem">{{mmss}}</div>
           <div class="flex flex-col items-center">
             <div v-for="(mob, index) in mobs" class="flex flex-row mb-2 max-w-sm">
@@ -33,7 +34,7 @@
               <button class="px-2 py-2 border border-gray mx-1" @click="removeMob(mob)">x</button>    
             </div>
             <div class="flex flex-row">
-              <input type="text" class="px-2 py-2 rounded border border-gray" v-model.trim="mobName" />
+              <input type="text" class="px-2 py-2 rounded border border-gray" v-model.trim="newMobName" />
               <button class="font-bold px-4 py-2 rounded border border-gray" type="button" @click="addMob()">add mob</button>    
             </div>
           </div>
@@ -56,7 +57,8 @@
             time_past: 0,
             time_left: 0,
             mobs: [],
-            mobName: '',
+            turn: 0,
+            newMobName: '',
             session: ''
           },
           methods: {
@@ -94,9 +96,9 @@
             },
             addMob() {
               this.sessionRef.set({
-                mobs: [...this.mobs, this.mobName]
+                mobs: [...this.mobs, this.newMobName]
               }, { merge: true })
-              this.mobName = ''
+              this.newMobName = ''
             },
             swapMob(ia, ib) {
               ib = (ib + this.mobs.length) % this.mobs.length
@@ -119,7 +121,13 @@
           computed: {
             mmss() { return this.mm + ':' + this.ss },
             mm() { return ('0' + (((this.time_left - this.time_past) / 1000 / 60) | 0)).slice(-2) },
-            ss() { return ('0' + (((this.time_left - this.time_past) / 1000 % 60) | 0)).slice(-2) }
+            ss() { return ('0' + (((this.time_left - this.time_past) / 1000 % 60) | 0)).slice(-2) },
+            driver() {
+              if (this.mobs.length == 0) {
+                return ''
+              }
+              return this.mobs[this.turn]
+            }
           },
           watch: {
             mmss(val) {
@@ -139,7 +147,8 @@
                 this.time_past = s
               } else {
                 this.time_past = this.time_left
-                this.stop()
+                this.reset()
+                this.turn = (this.turn + 1) % this.mobs.length
                 new Notification('finish')
               }
             }, 100)
