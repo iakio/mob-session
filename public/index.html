@@ -16,26 +16,26 @@
   <body>
     <div id="app">
       <div v-if="session">
-        <div class="text-center">
-          <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="start()" :disabled="started_at != 0 || offset == 0">start</button>
-          <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="stop()" :disabled="started_at == 0">stop</button>
-          <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="reset()">reset</button>    
-        </div>
-        <div class="text-center my-4" style="font-size: 10rem">{{mmss}}</div>
         <div>
-          <div v-for="(mob, index) in mobs" class="mb-2">
-            <div class="px-2 py-2 relative w-1/4">
-              {{mob}}
-              <div class="absolute pin-t pin-r">
-                <button class="px-2 py-2 border border-gray" @click="swapMob(index, index - 1)">↑</button>
-                <button class="px-2 py-2 border border-gray" @click="swapMob(index, index + 1)">↓</button>
-                <button class="px-2 py-2 border border-gray" @click="removeMob(mob)">x</button>    
-              </div>
-            </div>
+          <div class="flex justify-center">
+            <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="start()" :disabled="started_at != 0 || offset == 0">start</button>
+            <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="stop()" :disabled="started_at == 0">stop</button>
+            <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="reset()">reset</button>    
           </div>
-          <div>
-            <input type="text" class="px-2 py-2 rounded border border-gray" v-model.trim="mobName" />
-            <button class="font-bold px-4 py-2 rounded border border-gray" type="button" @click="addMob()">add mob</button>    
+          <div class="flex justify-center my-4" style="font-size: 10rem">{{mmss}}</div>
+          <div class="flex flex-col items-center">
+            <div v-for="(mob, index) in mobs" class="flex flex-row mb-2 max-w-sm">
+              <div class="px-2 py-2 w-32">
+                {{mob}}
+              </div>
+              <button class="px-2 py-2 border border-gray mx-1" @click="swapMob(index, index - 1)">↑</button>
+              <button class="px-2 py-2 border border-gray mx-1" @click="swapMob(index, index + 1)">↓</button>
+              <button class="px-2 py-2 border border-gray mx-1" @click="removeMob(mob)">x</button>    
+            </div>
+            <div class="flex flex-row">
+              <input type="text" class="px-2 py-2 rounded border border-gray" v-model.trim="mobName" />
+              <button class="font-bold px-4 py-2 rounded border border-gray" type="button" @click="addMob()">add mob</button>    
+            </div>
           </div>
         </div>
       </div>
