@@ -18,7 +18,7 @@
       <div v-if="session">
         <div>
           <div class="flex justify-center">
-            <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="start()" :disabled="started_at != 0 || offset == 0">start</button>
+            <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="start()" :disabled="started_at != 0 || time_left == 0">start</button>
             <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="stop()" :disabled="started_at == 0">stop</button>
             <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="reset()">reset</button>    
           </div>
@@ -53,8 +53,8 @@
           el: '#app',
           data: {
             started_at: 0,
-            sec_past: 0,
-            offset: 0,
+            time_past: 0,
+            time_left: 0,
             mobs: [],
             mobName: '',
             session: ''
@@ -64,7 +64,7 @@
               this.collectionRef.add({
                 created_at: Date.now(),
                 started_at: 0,
-                offset: 10
+                time_left: 10
               })
               .then((docRef) => {
                 location.hash = docRef.id
@@ -76,9 +76,9 @@
             reset() {
               this.sessionRef.set({
                 started_at: 0,
-                offset: 10
+                time_left: 10 * 1000
               }, { merge: true })
-              this.sec_past = 0
+              this.time_past = 0
             },
             start() {
               this.sessionRef.set({
@@ -88,9 +88,9 @@
             stop() {
               this.sessionRef.set({
                 started_at: 0,
-                offset: this.offset - this.sec_past
+                time_left: this.time_left - this.time_past
               }, { merge: true })
-              this.sec_past = 0
+              this.time_past = 0
             },
             addMob() {
               this.sessionRef.set({
@@ -118,8 +118,8 @@
           },
           computed: {
             mmss() { return this.mm + ':' + this.ss },
-            mm() { return ('0' + (((this.offset - this.sec_past) / 60) | 0)).slice(-2) },
-            ss() { return ('0' + (((this.offset - this.sec_past) % 60) | 0)).slice(-2) }
+            mm() { return ('0' + (((this.time_left - this.time_past) / 1000 / 60) | 0)).slice(-2) },
+            ss() { return ('0' + (((this.time_left - this.time_past) / 1000 % 60) | 0)).slice(-2) }
           },
           watch: {
             mmss(val) {
@@ -134,11 +134,11 @@
               if (this.started_at == 0) {
                 return
               }
-              const s = (Date.now() - this.started_at) / 1000
-              if (this.offset > s) {
-                this.sec_past = s
+              const s = Date.now() - this.started_at
+              if (this.time_left > s) {
+                this.time_past = s
               } else {
-                this.sec_past = this.offset
+                this.time_past = this.time_left
                 this.stop()
                 new Notification('finish')
               }
@@ -155,7 +155,7 @@
               this.sessionRef.onSnapshot((snapShot) => {
                 if (snapShot.exists) {
                   this.started_at = snapShot.data().started_at
-                  this.offset = snapShot.data().offset
+                  this.time_left = snapShot.data().time_left
                   this.mobs = snapShot.data().mobs || []
                   this.session = val
                 }
