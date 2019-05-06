@@ -16,27 +16,25 @@
   <body>
     <div id="app">
       <div v-if="session">
-        <div>
-          <div class="flex justify-center">
-            <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="start()" :disabled="started_at != 0 || time_left == 0">start</button>
-            <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="stop()" :disabled="started_at == 0">stop</button>
-            <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="reset()">reset</button>    
+        <div class="flex justify-center">
+          <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="start()" :disabled="started_at != 0 || time_left == 0">start</button>
+          <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="stop()" :disabled="started_at == 0">stop</button>
+          <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="reset()">reset</button>    
+        </div>
+        <div class="flex justify-center my-4" v-if="driver">{{driver}}'s turn!</div>
+        <div class="flex justify-center my-4" style="font-size: 10vw">{{mmss}}</div>
+        <div class="flex flex-col items-center">
+          <div v-for="(mob, index) in mobs" class="flex flex-row mb-2 max-w-sm">
+            <div class="px-2 py-2 w-32">
+              {{mob}}
+            </div>
+            <button class="px-2 py-2 border border-gray mx-1" @click="swapMob(index, index - 1)">↑</button>
+            <button class="px-2 py-2 border border-gray mx-1" @click="swapMob(index, index + 1)">↓</button>
+            <button class="px-2 py-2 border border-gray mx-1" @click="removeMob(mob)">x</button>    
           </div>
-          <div class="flex justify-center my-4" v-if="driver">{{driver}}'s turn!</div>
-          <div class="flex justify-center my-4" style="font-size: 10rem">{{mmss}}</div>
-          <div class="flex flex-col items-center">
-            <div v-for="(mob, index) in mobs" class="flex flex-row mb-2 max-w-sm">
-              <div class="px-2 py-2 w-32">
-                {{mob}}
-              </div>
-              <button class="px-2 py-2 border border-gray mx-1" @click="swapMob(index, index - 1)">↑</button>
-              <button class="px-2 py-2 border border-gray mx-1" @click="swapMob(index, index + 1)">↓</button>
-              <button class="px-2 py-2 border border-gray mx-1" @click="removeMob(mob)">x</button>    
-            </div>
-            <div class="flex flex-row">
-              <input type="text" class="px-2 py-2 rounded border border-gray" v-model.trim="newMobName" />
-              <button class="font-bold px-4 py-2 rounded border border-gray" type="button" @click="addMob()">add mob</button>    
-            </div>
+          <div class="flex flex-row">
+            <input type="text" class="px-2 py-2 rounded border border-gray" v-model.trim="newMobName" />
+            <button class="font-bold px-4 py-2 rounded border border-gray" type="button" @click="addMob()">add mob</button>    
           </div>
         </div>
       </div>
@@ -66,7 +64,7 @@
               this.collectionRef.add({
                 created_at: Date.now(),
                 started_at: 0,
-                time_left: 10
+                time_left: 10 * 60 * 1000
               })
               .then((docRef) => {
                 location.hash = docRef.id
@@ -78,7 +76,7 @@
             reset() {
               this.sessionRef.set({
                 started_at: 0,
-                time_left: 10 * 1000
+                time_left: 10 * 60 * 1000
               }, { merge: true })
               this.time_past = 0
             },
@@ -148,14 +146,17 @@
               } else {
                 this.time_past = this.time_left
                 this.reset()
-                this.turn = (this.turn + 1) % this.mobs.length
+                this.sessionRef.set({
+                  turn: (this.turn + 1) % this.mobs.length
+                }, { merge: true })
                 new Notification('finish')
               }
             }, 100)
 
-            onHashChange = (ev) => {
+            onPopState = (ev) => {
               let val = location.hash
               if (!val) {
+                this.session = ''
                 return
               }
               // remove '#'
@@ -166,12 +167,13 @@
                   this.started_at = snapShot.data().started_at
                   this.time_left = snapShot.data().time_left
                   this.mobs = snapShot.data().mobs || []
+                  this.turn = snapShot.data().turn || 0
                   this.session = val
                 }
               })
             }
-            window.onhashchange = onHashChange
-            onHashChange()
+            window.onpopstate = onPopState
+            onPopState()
 
             if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
               Notification.requestPermission()
