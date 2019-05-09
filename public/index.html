@@ -151,6 +151,7 @@
                   turn: (this.turn + 1) % this.mobs.length
                 }, { merge: true })
                 new Notification('finish')
+                new Audio('./solemnity1.mp3').play()
               }
             }, 100)
 
