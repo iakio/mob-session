@@ -112,7 +112,8 @@
             },
             removeMob(mob) {
               this.sessionRef.set({
-                mobs: this.mobs.filter(el => el != mob)
+                mobs: this.mobs.filter(el => el != mob),
+                turn: this.turn % this.mobs.length
               }, { merge: true })
             }
           },
