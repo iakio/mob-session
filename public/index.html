@@ -14,8 +14,8 @@
     <script defer src="https://unpkg.com/vue/dist/vue.js"></script>
   </head>
   <body>
-    <div id="app">
-      <div v-if="session">
+    <div id="app" class="flex flex-col justify-center items-center">
+      <div v-if="session" class="min-h-screen">
         <div class="flex justify-center">
           <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="start()" :disabled="started_at != 0 || time_left == 0">start</button>
           <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="stop()" :disabled="started_at == 0">stop</button>
@@ -32,10 +32,10 @@
             <button class="px-2 py-2 border border-gray mx-1" @click="swapMob(index, index + 1)">↓</button>
             <button class="px-2 py-2 border border-gray mx-1" @click="removeMob(mob)">x</button>    
           </div>
-          <div class="flex flex-row">
+          <form class="flex flex-row" @submit="addMob()">
             <input type="text" class="px-2 py-2 rounded border border-gray" v-model.trim="newMobName" />
-            <button class="font-bold px-4 py-2 rounded border border-gray" type="button" @click="addMob()">add mob</button>    
-          </div>
+            <button class="font-bold px-4 py-2 rounded border border-gray" type="submit">add mob</button>
+          </form>
         </div>
       </div>
       <div v-if="!session">
@@ -111,9 +111,10 @@
 
             },
             removeMob(mob) {
+              const mobs = this.mobs.filter(el => el != mob)
               this.sessionRef.set({
-                mobs: this.mobs.filter(el => el != mob),
-                turn: this.turn % this.mobs.length
+                mobs: mobs,
+                turn: this.turn % mobs.length
               }, { merge: true })
             }
           },
