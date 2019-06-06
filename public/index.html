@@ -19,7 +19,8 @@
         <div class="flex justify-center">
           <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="start()" :disabled="started_at != 0 || time_left == 0">start</button>
           <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="stop()" :disabled="started_at == 0">stop</button>
-          <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="reset()">reset</button>    
+          <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="reset()">reset</button>
+          <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="skip()">skip</button>
         </div>
         <div class="flex justify-center my-4" v-if="driver">{{driver}}'s turn!</div>
         <div class="flex justify-center my-4" style="font-size: 10vw">{{mmss}}</div>
@@ -92,6 +93,11 @@
               }, { merge: true })
               this.time_past = 0
             },
+            skip() {
+              this.sessionRef.set({
+                turn: (this.turn + 1) % this.mobs.length
+              }, { merge: true })
+            },
             addMob() {
               this.sessionRef.set({
                 mobs: [...this.mobs, this.newMobName]
@@ -151,7 +157,7 @@
                 this.sessionRef.set({
                   turn: (this.turn + 1) % this.mobs.length
                 }, { merge: true })
-                new Notification('finish')
+                new Notification(`${this.driver}'s turn finished at ${Date()}`)
                 new Audio('./solemnity1.mp3').play()
               }
             }, 100)
