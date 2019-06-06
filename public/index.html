@@ -23,6 +23,7 @@
           <button class="font-bold px-4 py-2 rounded border border-gray mx-4 my-2" type="button" @click="skip()">skip</button>
         </div>
         <div class="flex justify-center my-4" v-if="driver">{{driver}}'s turn!</div>
+        <div class="flex justify-center my-4" v-if="nextDriver">next is {{nextDriver}}.</div>
         <div class="flex justify-center my-4" style="font-size: 10vw">{{mmss}}</div>
         <div class="flex flex-col items-center">
           <div v-for="(mob, index) in mobs" class="flex flex-row mb-2 max-w-sm">
@@ -95,7 +96,7 @@
             },
             skip() {
               this.sessionRef.set({
-                turn: (this.turn + 1) % this.mobs.length
+                turn: this.next
               }, { merge: true })
             },
             addMob() {
@@ -133,6 +134,15 @@
                 return ''
               }
               return this.mobs[this.turn]
+            },
+            next() {
+              return (this.turn + 1) % this.mobs.length
+            },
+            nextDriver() {
+              if (this.mobs.length == 0) {
+                return ''
+              }
+              return this.mobs[this.next]
             }
           },
           watch: {
@@ -155,9 +165,8 @@
                 this.time_past = this.time_left
                 this.reset()
                 this.sessionRef.set({
-                  turn: (this.turn + 1) % this.mobs.length
+                  turn: this.next
                 }, { merge: true })
-                new Notification(`${this.driver}'s turn finished at ${Date()}`)
                 new Audio('./solemnity1.mp3').play()
               }
             }, 100)
